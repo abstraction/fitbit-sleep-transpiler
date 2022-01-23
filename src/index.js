@@ -4,7 +4,7 @@ const path = require("path");
 
 const startDate = '2022-01-07';
 const endDate = '2022-01-23';
-const accessToken = '';
+const accessToken = require('./config').accessToken;
 
 /**
  * TODO
