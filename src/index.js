@@ -1,53 +1,80 @@
-const axios = require("axios").default;
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios').default;
+const addSeconds = require('date-fns/addSeconds');
+const formatDistanceStrict = require('date-fns/formatDistanceStrict');
+const format = require('date-fns/format');
 
-const startDate = '2022-01-07';
-const endDate = '2022-01-23';
-const accessToken = require('./config').accessToken;
+const dataCSV = [];
+const dataPath = path.join(__dirname, '../src/');
+const log = (...args) => console.log(args);
+const milleniumDay = '1999-12-31'; // 2000-01-01
 
-/**
- * TODO
- * - Fix timeline block conflict
- */
+const dataBuffer = fs.readFileSync(dataPath + 'data.json');
+const dataJSON = JSON.parse(dataBuffer);
 
-const milleniumDayDiff = (date) => {
-  // Millenium Day: 1st Jan 2000
-  const milleniumDay = new Date('1999-12-31');  // Y-M-D NOT D-M-Y or M-D-Y
-  const millisecondsInDay = 24 * 60 * 60 * 1000;
-  date = new Date(date);
-  const dateDiff = Date.parse(milleniumDay) - Date.parse(date);
-  return Math.ceil(Math.abs( dateDiff / millisecondsInDay));
-}
+for (sleep of dataJSON.sleep) {
+  const dayLog = [];
+  for (sleepLog of sleep.levels.data) {
+    const timestamp = sleepLog.dateTime;
+    const sleepState = sleepLog.level;
+    const sleepDuration = sleepLog.seconds;
 
-const sleepDuration = (dateTime, seconds) => {
-  const formatTime = (time) => {
-      const getHours = ('0' + time.getHours()).slice(-2);
-      const getMinutes = ('0' + time.getMinutes()).slice(-2);
-      const getSeconds = ('0' + time.getSeconds()).slice(-2);
-      return getHours + ':' + getMinutes + ':' + getSeconds;
-  }
-  const sleepStart = new Date(dateTime);
-  const sleepEnd = new Date(Date.parse(sleepStart) + (seconds * 1000))
-  return [formatTime(sleepStart), formatTime(sleepEnd)]
-}
-
-axios.get(`https://api.fitbit.com/1.2/user/-/sleep/date/${startDate}/${endDate}.json`, {
-  headers: {
-    'Authorization': `Bearer ${accessToken}`
-  }
-})
-.then((res) => {
-  let csvData = [];
-  for(let sleepData of res.data.sleep){
-    for(let sleep of sleepData.levels.data) {
-      let {dateTime, level, seconds} = sleep;
-      if(level !== 'restless' && level !== 'awake' && level !== 'wake'){
-        let row = milleniumDayDiff(dateTime) + ',' + sleepDuration(dateTime, seconds)[0] + ',' + sleepDuration(dateTime, seconds)[1];
-        console.log(row);
-        csvData.push(row);
-      }
+    if (sleepState !== 'restless' && sleepState !== 'awake' && sleepState !== 'wake') {
+      const milleniumDate = parseInt(
+        formatDistanceStrict(new Date(milleniumDay), new Date(timestamp), {
+          unit: 'day',
+        })
+      );
+      const sleepStartHhMm = format(new Date(timestamp), 'HH:mm');
+      const sleepEnd = addSeconds(new Date(timestamp), sleepDuration);
+      const sleepEndHhMm = format(new Date(sleepEnd), 'HH:mm');
+      const row = milleniumDate + ',' + sleepStartHhMm + ',' + sleepEndHhMm;
+      dayLog.push(row);
     }
   }
-  fs.writeFileSync(path.join(__dirname, '../src/sleep.csv'), csvData.join('\n'));
-})
+  dataCSV.unshift(dayLog);
+}
+
+// const dataCSVb = dataCSV;
+
+// const fixTimeline = () => {
+//   newTimeline = [];
+//   for(day of dataCSVb) {
+//     // day.forEach((block, idx, day) => {
+//     for(let log in day){
+//       const segment = day[log].split(',');
+//       const prevSegment = (day[log - 1] !== undefined) ? day[log - 1].split(',') : null;
+//       if (prevSegment !== null && segment[1] === prevSegment[2] && segment[0] === prevSegment[0]) {
+//         day.shift();
+//         newTimeline.push(segment[0] + ',' + prevSegment[1] + ',' + segment[2]);
+//       } else {
+//         newTimeline.push(day[log]);
+//         // day.shift();
+//       }
+//     }
+//     // })
+//   }
+//   return dataCSVb;
+// }
+
+
+
+// const sleepCSV = fixTimeline();
+
+const tempCSVf = () => {
+  newTimeline = [];
+  for(day of dataCSV) {
+    day.forEach((block) => {
+      newTimeline.push(block);
+    })
+  }
+  return newTimeline;
+}
+
+const tempCSV = tempCSVf();
+
+// console.log(dataCSV);
+// fs.writeFileSync(path.join(__dirname, '../src/sleepCSV.csv'), sleepCSV.join('\n'));
+fs.writeFileSync(path.join(__dirname, '../src/tempCSV.csv'), tempCSV.join('\n'));
+
