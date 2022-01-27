@@ -1,3 +1,9 @@
+# Folders
 node_modules/
+.idea/
 .DS_Store
+data/
+.vscode/
+playground/
+# Files
 src/config.js
