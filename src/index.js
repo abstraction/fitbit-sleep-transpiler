@@ -5,9 +5,11 @@ const axios = require('axios').default;
 const fs = require('fs');
 const path = require('path');
 
-const startDate = '2022-01-07';
-const endDate = '2022-01-27';
-const accessToken = require('./config').accessToken;
+// ~.~.~.~ TO CHANGE ~.~.~.~.~.
+const START_DATE = '2022-01-07';
+const END_DATE = '2022-01-27';
+const accessToken = require('./config').accessToken; // change accessToken prop value in config file
+// ~.~.~.~.~.~.~.~.~.~.~.~.~.
 
 const resolve = (p) => path.join(__dirname, p);
 
@@ -78,7 +80,7 @@ const fixTimeline = (sleep) => {
 
 axios
   .get(
-    `https://api.fitbit.com/1.2/user/-/sleep/date/${startDate}/${endDate}.json`,
+    `https://api.fitbit.com/1.2/user/-/sleep/date/${START_DATE}/${END_DATE}.json`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
